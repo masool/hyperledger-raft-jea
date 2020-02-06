@@ -1,0 +1,53 @@
+raft-fabric-samples$ cd first-network/
+first-network$ ./byfn.sh down
+
+# docker-compose -f docker-compose-cli.yaml -f docker-compose-couch.yaml -f docker-compose-etcdraft2.yaml -f docker-compose-ca.yaml -f docker-compose-org3.yaml down --volumes --remove-orphans
+
+first-network$ docker stop $(docker ps -a -q)  ; docker rm -f $(docker ps -aq) ; docker system prune -a ; docker volume prune ; docker ps -a ; docker images -a ; docker volume ls
+
+server$ rm -rf wallet/
+
+#Generate cryptographic material
+
+first-network$ ./byfn.sh generate -o etcdraft
+
+#Startup RAFT Network
+
+first-network$ ./byfn.sh up -o etcdraft -l node
+
+
+#Install <Project> web app dependencies
+#Terminal1
+first-network$ cd ..
+raft-fabric-samples$ cd web-app/client/
+client$ npm install
+
+#Terminal2
+first-network$ cd ..
+raft-fabric-samples$ cd web-app/server/
+server$ npm install
+
+#Create a cryptographic identity
+
+server$ ./updateKeystore.sh
+
+server$ node enrollAdmin.js 
+
+#Start the <project> web app
+client$ npm start
+server$ npm start
+
+#Test the network - crash the ordering nodes
+server$ docker logs -f orderer4.example.com
+server$ docker container stop orderer4.example.com
+server$ docker logs -f orderer5.example.com
+
+
+#explorer up and down commands
+cd /blockchain-explorer
+docker-compose down
+docker-compose down -v
+docker-compose up -d
+docker-compose down -v
+
+
